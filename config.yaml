@@ -1,0 +1,10 @@
+# Configuration for the transcription tool
+models:
+  - whisper
+  # - whisperx
+  # - faster_whisper
+
+output_formats:
+  - json
+  - srt
+  - csv
