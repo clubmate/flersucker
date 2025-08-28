@@ -2,3 +2,11 @@ yt-dlp
 ffmpeg-python
 PyYAML
 openai-whisper
+whisperx @ git+https://github.com/m-bain/whisperx.git
+faster-whisper
+nemo_toolkit[asr]
+tqdm
+
+# PyTorch with CUDA support - install with:
+# pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
+# Note: The above packages are installed separately with CUDA support

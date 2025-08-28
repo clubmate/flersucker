@@ -24,7 +24,7 @@ def main():
     models = args.models or config.get("models", [])
     if not models:
         # Prompt user if no models are specified
-        print("Available models: whisper, whisperx, faster_whisper, parakeet, phi, canary, voxtral") # Add other models later
+        print("Available models: whisper, whisperx, faster_whisper, parakeet, canary")
         models_input = input("Which model(s) do you want to use? (space-separated): ")
         models = models_input.split()
 
@@ -34,15 +34,22 @@ def main():
 
     # Handle input
     input_path = args.input
+    yt_config = config.get("youtube_download", {})
+    video_quality = yt_config.get("video_quality", "best[ext=mp4]/best")
+    audio_config = yt_config.get("audio_extraction", {})
+
     if "youtube.com" in input_path or "youtu.be" in input_path:
         print("Downloading from YouTube...")
-        # Note: download_youtube returns the path to the downloaded file, 
-        # but it might be a video file that needs audio extraction.
-        # For simplicity, we assume it downloads as mp3.
-        audio_file = download_youtube(input_path, output_dir)
+        video_path = download_youtube(input_path, output_dir, quality=video_quality)
+        print("Extracting audio from video...")
+        audio_file = extract_audio(video_path, output_dir, audio_config=audio_config)
     elif input_path.endswith(('.mp4')):
         print("Extracting audio from video...")
-        audio_file = extract_audio(input_path, output_dir)
+        # copy the file to the output directory
+        import shutil
+        shutil.copy(input_path, output_dir)
+        video_path = os.path.join(output_dir, os.path.basename(input_path))
+        audio_file = extract_audio(video_path, output_dir, audio_config=audio_config)
     else:
         audio_file = input_path
         # copy the file to the output directory
@@ -53,9 +60,11 @@ def main():
 
     # Run transcription
     transcripts = []
+    model_configs = config.get("model_configs", {})
     for model in models:
         try:
-            transcript_file = transcribe(model, audio_file, output_dir)
+            model_config = model_configs.get(model, {})
+            transcript_file = transcribe(model, audio_file, output_dir, model_config)
             transcripts.append(transcript_file)
         except Exception as e:
             print(f"Error during transcription with {model}: {e}")
