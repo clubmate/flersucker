@@ -1,8 +1,6 @@
 # Configuration for the transcription tool
 models:
   - whisper
-  - whisperx
-  - faster_whisper
   - parakeet
   - canary
 
@@ -15,15 +13,6 @@ model_configs:
   whisper:
     model_size: "large-v3"
     device: "cuda"
-  whisperx:
-    model_size: "large-v3"
-    device: "cuda"
-    batch_size: 16
-    compute_type: "float16" # or int8
-  faster_whisper:
-    model_size: "large-v3"
-    device: "cuda"
-    compute_type: "float16" # or int8
   parakeet:
     model_size: "nvidia/parakeet-tdt-0.6b-v3"
     device: "cuda"

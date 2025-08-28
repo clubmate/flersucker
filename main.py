@@ -1,12 +1,51 @@
 import argparse
 import os
 import yaml
+import sys
+import importlib.util
 from src.download import download_youtube, extract_audio
 from src.transcribe import transcribe
 from src.consensus import create_consensus
 from src.utils import create_output_directory
 
+def apply_nemo_patch_on_windows():
+    """
+    Automatically patches the nemo_toolkit on Windows to fix an issue with 'signal.SIGKILL'.
+    This function is intended to be run at the start of the application.
+    """
+    if sys.platform != "win32":
+        return
+
+    try:
+        spec = importlib.util.find_spec("nemo")
+        if spec is None or spec.origin is None:
+            return
+
+        nemo_dir = os.path.dirname(spec.origin)
+        exp_manager_path = os.path.join(nemo_dir, 'utils', 'exp_manager.py')
+
+        if not os.path.exists(exp_manager_path):
+            return
+
+        with open(exp_manager_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        old_line = "rank_termination_signal: signal.Signals = signal.SIGKILL"
+        if old_line in content:
+            new_line = "rank_termination_signal: signal.Signals = signal.SIGTERM"
+            new_content = content.replace(old_line, new_line)
+            
+            with open(exp_manager_path, 'w', encoding='utf-8') as f:
+                f.write(new_content)
+            print("Applied patch to nemo_toolkit for Windows compatibility.")
+
+    except Exception as e:
+        print(f"Could not apply nemo_toolkit patch: {e}")
+
+
 def main():
+    apply_nemo_patch_on_windows()
+    
     parser = argparse.ArgumentParser(description="Transcription tool for audio and video files.")
     parser.add_argument("input", help="Path to a local file or a YouTube URL.")
     parser.add_argument("--models", nargs="+", help="Transcription models to use.", default=[])

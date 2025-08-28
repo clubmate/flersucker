@@ -8,8 +8,6 @@ A Python-based transcription tool for audio and video files (local or YouTube).
 - **Automatic Audio Extraction**: For video files, the audio is automatically extracted using `ffmpeg`.
 - **Multiple Transcription Models**: Support for various speech-to-text models. Each model has its own script for modularity.
   - **whisper**: OpenAI Whisper (large-v3)
-  - **whisperx**: WhisperX with forced alignment (large-v3)
-  - **faster_whisper**: Faster implementation of Whisper (large-v3)
   - **parakeet**: NVIDIA Parakeet TDT-0.6b-v3 multilingual model (nvidia/parakeet-tdt-0.6b-v3)
   - **canary**: NVIDIA Canary multilingual model (nvidia/canary-1b)
 - **GPU/CPU Support**: All models are configured to use GPU when available, with CPU fallback.
@@ -33,8 +31,6 @@ flersucker/
 │   ├── utils.py
 │   └── models/
 │       ├── whisper.py
-│       ├── whisperx.py
-│       ├── faster_whisper.py
 │       ├── parakeet.py
 │       └── canary.py
 └── README.md
@@ -103,8 +99,6 @@ Each model can be individually configured with specific parameters:
 # config.yaml
 models:
   - whisper
-  - whisperx
-  - faster_whisper
   - parakeet
   - canary
 
@@ -117,15 +111,6 @@ model_configs:
   whisper:
     model_size: "large-v3"
     device: "cuda"
-  whisperx:
-    model_size: "large-v3"
-    device: "cuda"
-    batch_size: 16
-    compute_type: "float16"
-  faster_whisper:
-    model_size: "large-v3"
-    device: "cuda"
-    compute_type: "float16"
   parakeet:
     model_size: "nvidia/parakeet-tdt-0.6b-v3"
     device: "cuda"
@@ -137,8 +122,6 @@ model_configs:
 ### Available Models
 
 - **whisper**: OpenAI's Whisper model with various size options (tiny, base, small, medium, large, large-v2, large-v3)
-- **whisperx**: Enhanced Whisper with forced alignment for better timestamp accuracy
-- **faster_whisper**: Optimized implementation of Whisper using CTranslate2
 - **parakeet**: NVIDIA's TDT based ASR model, optimized for streaming applications
 - **canary**: NVIDIA's multilingual ASR model supporting multiple languages
 
