@@ -24,33 +24,46 @@ def transcribe_parakeet(input_file, output_file, config):
 
         print("Model loaded successfully. Starting transcription...")
 
-        # Perform transcription
+        # Perform transcription with timestamps
         with torch.no_grad():
-            # NeMo expects audio files and returns transcription
-            transcriptions = model.transcribe([input_file], batch_size=1)
+            # NeMo expects audio files and returns transcription with timestamps
+            transcriptions = model.transcribe([input_file], timestamps=True, batch_size=1)
 
         # Process the result
         if isinstance(transcriptions, list) and len(transcriptions) > 0:
-            # Extract text from Hypothesis object
             hypothesis = transcriptions[0]
+            
+            # Extract text from Hypothesis object
             if hasattr(hypothesis, 'text'):
                 text = hypothesis.text
             else:
                 text = str(hypothesis)
+            
+            # Extract timestamps from the hypothesis
+            segments = []
+            if hasattr(hypothesis, 'timestamp') and 'segment' in hypothesis.timestamp:
+                for seg in hypothesis.timestamp['segment']:
+                    segments.append({
+                        "start": float(seg['start']),
+                        "end": float(seg['end']),
+                        "text": seg['segment']
+                    })
+            else:
+                # Fallback if no timestamps available
+                segments = [{
+                    "start": 0.0,
+                    "end": 0.0,
+                    "text": text
+                }]
         else:
             text = str(transcriptions)
+            segments = [{"start": 0.0, "end": 0.0, "text": text}]
 
         # Create result structure similar to Whisper
         result = {
             "text": text,
             "language": "de",  # Assuming German based on the project context
-            "segments": [
-                {
-                    "start": 0.0,
-                    "end": 0.0,  # NeMo doesn't provide timestamps by default
-                    "text": text
-                }
-            ]
+            "segments": segments
         }
 
         # Save to output file
