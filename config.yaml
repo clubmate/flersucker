@@ -11,7 +11,7 @@ output_formats:
 
 model_configs:
   whisper:
-    model_size: "large-v3"
+    model_size: "large"
     device: "cuda"
   parakeet:
     model_size: "nvidia/parakeet-tdt-0.6b-v3"
