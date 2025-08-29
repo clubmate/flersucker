@@ -1,6 +1,9 @@
 import os
+import sys
 import datetime
 import re
+import yaml
+import importlib.util
 import yt_dlp
 
 def get_youtube_title(url):
@@ -67,3 +70,46 @@ def create_output_directory(input_path):
     output_dir = os.path.join('output', dir_name)
     os.makedirs(output_dir, exist_ok=True)
     return output_dir
+
+
+def apply_nemo_patch_on_windows():
+    """Apply Windows compatibility patch for nemo_toolkit."""
+    if sys.platform != "win32":
+        return
+    try:
+        spec = importlib.util.find_spec("nemo")
+        if spec is None or spec.origin is None:
+            return
+        nemo_dir = os.path.dirname(spec.origin)
+        exp_manager_path = os.path.join(nemo_dir, 'utils', 'exp_manager.py')
+        if not os.path.exists(exp_manager_path):
+            return
+        with open(exp_manager_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        old_line = "rank_termination_signal: signal.Signals = signal.SIGKILL"
+        if old_line in content:
+            new_line = "rank_termination_signal: signal.Signals = signal.SIGTERM"
+            with open(exp_manager_path, 'w', encoding='utf-8') as f:
+                f.write(content.replace(old_line, new_line))
+            print("Applied patch to nemo_toolkit for Windows compatibility.")
+    except Exception as e:
+        print(f"Could not apply nemo_toolkit patch: {e}")
+
+
+def load_config(config_path="config.yaml"):
+    """Load configuration from YAML file."""
+    if os.path.exists(config_path):
+        with open(config_path, 'r', encoding='utf-8') as f:
+            return yaml.safe_load(f)
+    return {}
+
+
+def get_active_models(args_models, config):
+    """Get list of active models from args or config."""
+    models = args_models or config.get("models", [])
+    if not models:
+        print("Available models: parakeet")
+        models = input("Which model(s)? ").split()
+    
+    model_cfgs = config.get("model_configs", {})
+    return [m for m in models if model_cfgs.get(m, {}).get("active", True)]

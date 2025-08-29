@@ -1,6 +1,7 @@
 # Configuration for the transcription tool
 models:
   - parakeet
+  - example
 
 output_formats:
   - json
@@ -8,8 +9,10 @@ output_formats:
 model_configs:
   parakeet:
     active: true
-    model_size: "nvidia/parakeet-tdt-0.6b-v3"
+    model_name: "nvidia/parakeet-tdt-0.6b-v3"
     device: "cuda"
+  example:
+    active: true
 
 youtube_download:
   video_quality: "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best"
