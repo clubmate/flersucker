@@ -1,80 +1,56 @@
-import argparse
-import json
+"""Canary model implementation using the base transcription class."""
+
 import torch
 import nemo.collections.asr as nemo_asr
-from nemo.core import ModelPT
-import os
+from typing import Any, Dict
+from .base import BaseTranscriptionModel, create_cli_parser
 
-def transcribe_canary(input_file, output_file, config):
-    """
-    Transcribes an audio file using the Canary model from NVIDIA NeMo.
-    """
-    print(f"Starting transcription for {input_file} with Canary...")
 
-    # Get configuration parameters
-    model_name = config.get("model_name", "nvidia/canary-1b")
-    device = config.get("device", "cuda" if torch.cuda.is_available() else "cpu")
-
-    try:
-        # Load the Canary model
-        print(f"Loading Canary model: {model_name}")
-        model = nemo_asr.models.EncDecMultiTaskModel.from_pretrained(model_name)
-        model = model.to(device)
-        model.eval()
-
-        print("Model loaded successfully. Starting transcription...")
-
-        # Perform transcription
+class CanaryModel(BaseTranscriptionModel):
+    """Canary transcription model implementation."""
+    
+    def __init__(self, config: Dict[str, Any]):
+        super().__init__(config)
+        self.model = None
+        self.model_name = config.get("model_name", "nvidia/canary-1b")
+    
+    def load_model(self) -> Any:
+        """Load the Canary model."""
+        if self.model is None:
+            print(f"Loading Canary model: {self.model_name}")
+            self.model = nemo_asr.models.EncDecMultiTaskModel.from_pretrained(self.model_name)
+            self.model = self.model.to(self.device)
+            self.model.eval()
+        return self.model
+    
+    def transcribe_audio(self, input_file: str) -> str:
+        """Transcribe audio using Canary."""
         with torch.no_grad():
-            # NeMo expects audio files and returns transcription
-            transcriptions = model.transcribe([input_file], batch_size=1)
-
-        # Process the result
+            transcriptions = self.model.transcribe([input_file], batch_size=1)
+        
+        # Extract text from result
         if isinstance(transcriptions, list) and len(transcriptions) > 0:
-            # Extract text from Hypothesis object
             hypothesis = transcriptions[0]
             if hasattr(hypothesis, 'text'):
-                text = hypothesis.text
+                return hypothesis.text
             else:
-                text = str(hypothesis)
+                return str(hypothesis)
         else:
-            text = str(transcriptions)
+            return str(transcriptions)
+    
+    def format_result(self, text: str, language: str = "de") -> Dict[str, Any]:
+        """Format Canary result with German as default language."""
+        return super().format_result(text, language)
 
-        # Create result structure similar to Whisper
-        result = {
-            "text": text,
-            "language": "de",  # Assuming German based on the project context
-            "segments": [
-                {
-                    "start": 0.0,
-                    "end": 0.0,  # NeMo doesn't provide timestamps by default
-                    "text": text
-                }
-            ]
-        }
 
-        # Save to output file
-        with open(output_file, 'w', encoding='utf-8') as f:
-            json.dump(result, f, indent=4, ensure_ascii=False)
+def transcribe_canary(input_file: str, output_file: str, config: Dict[str, Any]) -> None:
+    """Transcribe audio file using Canary model."""
+    model = CanaryModel(config)
+    model.transcribe(input_file, output_file)
 
-        print(f"Canary transcription saved to {output_file}")
-
-    except Exception as e:
-        print(f"Error during Canary transcription: {str(e)}")
-        # Fallback to dummy result
-        result = {
-            "text": f"Error: {str(e)}",
-            "language": "unknown",
-            "segments": [{"start": 0.0, "end": 0.0, "text": f"Error: {str(e)}"}]
-        }
-        with open(output_file, 'w', encoding='utf-8') as f:
-            json.dump(result, f, indent=4, ensure_ascii=False)
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Transcribe an audio file using the Canary model.")
-    parser.add_argument("--input_file", required=True, help="Path to the input audio file.")
-    parser.add_argument("--output_file", required=True, help="Path to the output JSON file.")
-    parser.add_argument("--config", type=json.loads, default={}, help="JSON string with model configurations.")
+    parser = create_cli_parser("Transcribe an audio file using the Canary model.")
     args = parser.parse_args()
-
+    
     transcribe_canary(args.input_file, args.output_file, args.config)

@@ -1,33 +1,43 @@
-import argparse
-import json
+"""Whisper model implementation using the base transcription class."""
+
 import whisper
-import torch
+from typing import Any, Dict
+from .base import BaseTranscriptionModel, create_cli_parser
 
-def transcribe_whisper(input_file, output_file, config):
-    """
-    Transcribes an audio file using the whisper model.
-    """
-    print(f"Starting transcription for {input_file} with whisper...")
-    
-    model_size = config.get("model_size", "large-v3")
-    device = config.get("device", "cuda")
-    if device == "cuda" and not torch.cuda.is_available():
-        print("Warning: CUDA not available, falling back to CPU for whisper model.")
-        device = "cpu"
 
-    model = whisper.load_model(model_size, device=device)
-    result = model.transcribe(input_file, verbose=True)
+class WhisperModel(BaseTranscriptionModel):
+    """Whisper transcription model implementation."""
     
-    with open(output_file, 'w') as f:
-        json.dump(result, f, indent=4)
-        
-    print(f"Whisper transcription saved to {output_file}")
+    def __init__(self, config: Dict[str, Any]):
+        super().__init__(config)
+        self.model = None
+        self.model_size = config.get("model_size", "large-v3")
+    
+    def load_model(self) -> Any:
+        """Load the Whisper model."""
+        if self.model is None:
+            print(f"Loading Whisper model: {self.model_size}")
+            self.model = whisper.load_model(self.model_size, device=self.device)
+        return self.model
+    
+    def transcribe_audio(self, input_file: str) -> str:
+        """Transcribe audio using Whisper and return the result."""
+        result = self.model.transcribe(input_file, verbose=True)
+        return result
+    
+    def format_result(self, result: Dict[str, Any], language: str = "auto") -> Dict[str, Any]:
+        """Format Whisper result (already in correct format)."""
+        return result
+
+
+def transcribe_whisper(input_file: str, output_file: str, config: Dict[str, Any]) -> None:
+    """Transcribe audio file using Whisper model."""
+    model = WhisperModel(config)
+    model.transcribe(input_file, output_file)
+
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Transcribe an audio file using the whisper model.")
-    parser.add_argument("--input_file", required=True, help="Path to the input audio file.")
-    parser.add_argument("--output_file", required=True, help="Path to the output JSON file.")
-    parser.add_argument("--config", type=json.loads, default={}, help="JSON string with model configurations.")
+    parser = create_cli_parser("Transcribe an audio file using the Whisper model.")
     args = parser.parse_args()
     
     transcribe_whisper(args.input_file, args.output_file, args.config)

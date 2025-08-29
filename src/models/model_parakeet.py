@@ -1,93 +1,58 @@
-import argparse
-import json
+"""Parakeet model implementation using the base transcription class."""
+
 import torch
 import nemo.collections.asr as nemo_asr
-from nemo.core import ModelPT
-import os
+from typing import Any, Dict, List
+from .base import BaseTranscriptionModel, create_cli_parser
 
-def transcribe_parakeet(input_file, output_file, config):
-    """
-    Transcribes an audio file using the Parakeet model from NVIDIA NeMo.
-    """
-    print(f"Starting transcription for {input_file} with Parakeet...")
 
-    # Get configuration parameters
-    model_name = config.get("model_name", "nvidia/parakeet-tdt-0.6b-v3")
-    device = config.get("device", "cuda" if torch.cuda.is_available() else "cpu")
-
-    try:
-        # Load the Parakeet model
-        print(f"Loading Parakeet model: {model_name}")
-        model = nemo_asr.models.EncDecRNNTBPEModel.from_pretrained(model_name)
-        model = model.to(device)
-        model.eval()
-
-        print("Model loaded successfully. Starting transcription...")
-
-        # Perform transcription with timestamps
+class ParakeetModel(BaseTranscriptionModel):
+    """Parakeet transcription model implementation."""
+    
+    def __init__(self, config: Dict[str, Any]):
+        super().__init__(config)
+        self.model = None
+        self.model_name = config.get("model_name", "nvidia/parakeet-tdt-0.6b-v3")
+    
+    def load_model(self) -> Any:
+        """Load the Parakeet model."""
+        if self.model is None:
+            print(f"Loading Parakeet model: {self.model_name}")
+            self.model = nemo_asr.models.EncDecRNNTBPEModel.from_pretrained(self.model_name)
+            self.model = self.model.to(self.device)
+            self.model.eval()
+        return self.model
+    
+    def transcribe_audio(self, input_file: str) -> str:
+        """Transcribe audio using Parakeet."""
         with torch.no_grad():
-            # NeMo expects audio files and returns transcription with timestamps
-            transcriptions = model.transcribe([input_file], timestamps=True, batch_size=1)
-
-        # Process the result
+            # Use timestamps if available
+            transcriptions = self.model.transcribe([input_file], timestamps=True, batch_size=1)
+        
+        # Extract text from result
         if isinstance(transcriptions, list) and len(transcriptions) > 0:
             hypothesis = transcriptions[0]
-            
-            # Extract text from Hypothesis object
             if hasattr(hypothesis, 'text'):
-                text = hypothesis.text
+                return hypothesis.text
             else:
-                text = str(hypothesis)
-            
-            # Extract timestamps from the hypothesis
-            segments = []
-            if hasattr(hypothesis, 'timestamp') and 'segment' in hypothesis.timestamp:
-                for seg in hypothesis.timestamp['segment']:
-                    segments.append({
-                        "start": float(seg['start']),
-                        "end": float(seg['end']),
-                        "text": seg['segment']
-                    })
-            else:
-                # Fallback if no timestamps available
-                segments = [{
-                    "start": 0.0,
-                    "end": 0.0,
-                    "text": text
-                }]
+                return str(hypothesis)
         else:
-            text = str(transcriptions)
-            segments = [{"start": 0.0, "end": 0.0, "text": text}]
+            return str(transcriptions)
+    
+    def format_result(self, text: str, language: str = "de") -> Dict[str, Any]:
+        """Format Parakeet result with enhanced segments if available."""
+        # For now, use basic format - could be enhanced to extract timestamps
+        return super().format_result(text, language)
 
-        # Create result structure similar to Whisper
-        result = {
-            "text": text,
-            "language": "de",  # Assuming German based on the project context
-            "segments": segments
-        }
 
-        # Save to output file
-        with open(output_file, 'w', encoding='utf-8') as f:
-            json.dump(result, f, indent=4, ensure_ascii=False)
+def transcribe_parakeet(input_file: str, output_file: str, config: Dict[str, Any]) -> None:
+    """Transcribe audio file using Parakeet model."""
+    model = ParakeetModel(config)
+    model.transcribe(input_file, output_file)
 
-        print(f"Parakeet transcription saved to {output_file}")
-
-    except Exception as e:
-        print(f"Error during Parakeet transcription: {str(e)}")
-        # Fallback to dummy result
-        result = {
-            "text": f"Error: {str(e)}",
-            "language": "unknown",
-            "segments": [{"start": 0.0, "end": 0.0, "text": f"Error: {str(e)}"}]
-        }
-        with open(output_file, 'w', encoding='utf-8') as f:
-            json.dump(result, f, indent=4, ensure_ascii=False)
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Transcribe an audio file using the Parakeet model.")
-    parser.add_argument("--input_file", required=True, help="Path to the input audio file.")
-    parser.add_argument("--output_file", required=True, help="Path to the output JSON file.")
-    parser.add_argument("--config", type=json.loads, default={}, help="JSON string with model configurations.")
+    parser = create_cli_parser("Transcribe an audio file using the Parakeet model.")
     args = parser.parse_args()
-
+    
     transcribe_parakeet(args.input_file, args.output_file, args.config)
