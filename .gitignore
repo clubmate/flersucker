@@ -208,3 +208,8 @@ __marimo__/
 
 # Output
 output/
+
+# Test data and temporary files
+test_data/
+test_output/
+*.tmp
