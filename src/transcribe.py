@@ -9,7 +9,10 @@ def transcribe(model, audio_file, output_dir, model_config):
     """
     script_name = f'model_{model}.py'
     script_path = os.path.join('src', 'models', script_name)
-    output_file = os.path.join(output_dir, f'{model}_transcription.json')
+    
+    # Use the base name of the audio file for the output filename
+    base_name = os.path.splitext(os.path.basename(audio_file))[0]
+    output_file = os.path.join(output_dir, f'{base_name}-{model}.json')
     
     if not os.path.exists(script_path):
         raise ValueError(f"Transcription script for model '{model}' not found at '{script_path}'")

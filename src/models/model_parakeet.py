@@ -4,11 +4,25 @@ import torch
 import nemo.collections.asr as nemo_asr
 from nemo.core import ModelPT
 import os
+import logging
 
 def transcribe_parakeet(input_file, output_file, config):
     """
     Transcribes an audio file using the Parakeet model from NVIDIA NeMo.
+    Returns both segment-level and word-level timestamps.
     """
+    # Reduce NeMo logging verbosity - suppress all warnings and info
+    logging.getLogger('nemo').setLevel(logging.ERROR)
+    logging.getLogger('nemo_logger').setLevel(logging.ERROR)
+    logging.getLogger('pytorch_lightning').setLevel(logging.ERROR)
+    logging.getLogger('transformers').setLevel(logging.ERROR)
+    logging.getLogger('huggingface_hub').setLevel(logging.ERROR)
+    
+    # Also suppress warnings module
+    import warnings
+    warnings.filterwarnings("ignore", category=UserWarning)
+    warnings.filterwarnings("ignore", category=FutureWarning)
+
     print(f"Starting transcription for {input_file} with Parakeet...")
 
     # Get configuration parameters
@@ -16,18 +30,26 @@ def transcribe_parakeet(input_file, output_file, config):
     device = config.get("device", "cuda" if torch.cuda.is_available() else "cpu")
 
     try:
-        # Load the Parakeet model
-        print(f"Loading Parakeet model: {model_name}")
-        model = nemo_asr.models.EncDecRNNTBPEModel.from_pretrained(model_name)
-        model = model.to(device)
-        model.eval()
-
-        print("Model loaded successfully. Starting transcription...")
+        # Load the Parakeet model (reduced output)
+        print(f"Loading Parakeet model...")
+        
+        # Suppress stdout temporarily during model loading
+        import sys
+        from contextlib import redirect_stdout, redirect_stderr
+        
+        with redirect_stdout(open(os.devnull, 'w')), redirect_stderr(open(os.devnull, 'w')):
+            model = nemo_asr.models.EncDecRNNTBPEModel.from_pretrained(model_name)
+            model = model.to(device)
+            model.eval()
+        
+        print("Model loaded. Transcribing...")
 
         # Perform transcription with timestamps
         with torch.no_grad():
             # NeMo expects audio files and returns transcription with timestamps
-            transcriptions = model.transcribe([input_file], timestamps=True, batch_size=1)
+            # This includes both segment and word-level timestamps
+            with redirect_stdout(open(os.devnull, 'w')):  # Only suppress stdout, keep stderr for tqdm
+                transcriptions = model.transcribe([input_file], timestamps=True, batch_size=1)
 
         # Process the result
         if isinstance(transcriptions, list) and len(transcriptions) > 0:
@@ -43,23 +65,42 @@ def transcribe_parakeet(input_file, output_file, config):
             segments = []
             if hasattr(hypothesis, 'timestamp') and 'segment' in hypothesis.timestamp:
                 for seg in hypothesis.timestamp['segment']:
-                    segments.append({
+                    segment_data = {
                         "start": float(seg['start']),
                         "end": float(seg['end']),
-                        "text": seg['segment']
-                    })
+                        "text": seg['segment'],
+                        "words": []
+                    }
+                    
+                    # Extract word-level timestamps if available
+                    if 'word' in hypothesis.timestamp:
+                        # Find words that belong to this segment
+                        for word in hypothesis.timestamp['word']:
+                            word_start = float(word['start'])
+                            word_end = float(word['end'])
+                            
+                            # Check if word falls within this segment's time range
+                            if word_start >= segment_data['start'] and word_end <= segment_data['end']:
+                                segment_data['words'].append({
+                                    "start": word_start,
+                                    "end": word_end,
+                                    "word": word['word']
+                                })
+                    
+                    segments.append(segment_data)
             else:
                 # Fallback if no timestamps available
                 segments = [{
                     "start": 0.0,
                     "end": 0.0,
-                    "text": text
+                    "text": text,
+                    "words": []
                 }]
         else:
             text = str(transcriptions)
-            segments = [{"start": 0.0, "end": 0.0, "text": text}]
+            segments = [{"start": 0.0, "end": 0.0, "text": text, "words": []}]
 
-        # Create result structure similar to Whisper
+        # Create result structure with both segment and word-level timestamps
         result = {
             "text": text,
             "language": "de",  # Assuming German based on the project context
@@ -78,7 +119,7 @@ def transcribe_parakeet(input_file, output_file, config):
         result = {
             "text": f"Error: {str(e)}",
             "language": "unknown",
-            "segments": [{"start": 0.0, "end": 0.0, "text": f"Error: {str(e)}"}]
+            "segments": [{"start": 0.0, "end": 0.0, "text": f"Error: {str(e)}", "words": []}]
         }
         with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(result, f, indent=4, ensure_ascii=False)

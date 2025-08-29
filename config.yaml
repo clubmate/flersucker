@@ -1,23 +1,14 @@
 # Configuration for the transcription tool
 models:
-  - whisper
   - parakeet
-  - canary
 
 output_formats:
   - json
-  - srt
-  - csv
 
 model_configs:
-  whisper:
-    model_size: "large"
-    device: "cuda"
   parakeet:
+    active: true
     model_size: "nvidia/parakeet-tdt-0.6b-v3"
-    device: "cuda"
-  canary:
-    model_size: "nvidia/canary-1b"
     device: "cuda"
 
 youtube_download:

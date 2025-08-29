@@ -5,16 +5,14 @@ A Python-based transcription tool for audio and video files (local or YouTube).
 ## Features
 
 - **Multiple Input Sources**: Transcribe local audio/video files (`.wav`, `.mp3`, `.mp4`) or download and transcribe from YouTube URLs and playlists.
+- **Sequential Playlist Processing**: Playlists werden Video für Video nacheinander verarbeitet (Download -> Audio-Extraktion -> Transkription), keine Massen-Downloads vorab.
+- **Playlist Fortschritt & Offset**: Fortschrittsanzeige `>>> 4/200: Titel` und Start ab beliebigem Index via `--playlist-start`.
 - **Automatic Audio Extraction**: For video files, the audio is automatically extracted using `ffmpeg`.
 - **Multiple Transcription Models**: Support for various speech-to-text models. Each model has its own script for modularity.
-  - **whisper**: OpenAI Whisper (large-v3)
   - **parakeet**: NVIDIA Parakeet TDT-0.6b-v3 multilingual model (nvidia/parakeet-tdt-0.6b-v3)
-  - **canary**: NVIDIA Canary multilingual model (nvidia/canary-1b)
 - **GPU/CPU Support**: All models are configured to use GPU when available, with CPU fallback.
 - **Configurable Model Parameters**: Model sizes, devices, and other parameters can be configured via `config.yaml`.
-- **Timestamped Transcripts**: All transcripts include timestamps.
-- **Multiple Output Formats**: Save transcripts in various formats like `json`, `srt`, and `csv`.
-- **Consensus Function**: Automatically generate a consensus transcript by comparing the outputs of multiple models.
+- **Timestamped Transcripts**: All transcripts include timestamps (word-level and segment-level).
 - **Configurable**: Configure the tool via command-line arguments or a `config.yaml` file.
 
 ## Project Structure
@@ -27,12 +25,10 @@ flersucker/
 ├── src/
 │   ├── download.py
 │   ├── transcribe.py
-│   ├── consensus.py
 │   ├── utils.py
 │   └── models/
-│       ├── whisper.py
-│       ├── parakeet.py
-│       └── canary.py
+│       ├── model_example.py
+│       └── model_parakeet.py
 └── README.md
 ```
 
@@ -70,19 +66,39 @@ Run the main script with the path to your local file or a YouTube URL.
 **Transcribe a local file:**
 
 ```bash
-python main.py path/to/your/audio.mp3 --models whisper whisperx
+python main.py path/to/your/audio.mp3 --models parakeet
 ```
 
 **Transcribe a YouTube video:**
 
 ```bash
-python main.py "https://www.youtube.com/watch?v=your_video_id" --models whisper parakeet
+python main.py "https://www.youtube.com/watch?v=your_video_id" --models parakeet
 ```
+
+**Transcribe a YouTube playlist (sequential):**
+
+```bash
+python main.py "https://www.youtube.com/playlist?list=PLAYLIST_ID" --models parakeet
+```
+
+Während der Verarbeitung wird jede Episode mit numerischem Fortschritt ausgegeben:
+
+```
+>>> 4/200: Joey Bada$$ - DARK AURA (Official Video)
+```
+
+**Playlist ab bestimmtem Video starten (Skip erster N-1 Videos):**
+
+```bash
+python main.py "https://www.youtube.com/playlist?list=PLAYLIST_ID" --models parakeet --playlist-start 7
+```
+
+Startindex ist 1-basiert; bei `--playlist-start 7` beginnt die Verarbeitung mit dem 7. Video.
 
 **Use all available models:**
 
 ```bash
-python main.py audio.wav --models whisper whisperx faster_whisper parakeet canary
+python main.py audio.wav --models parakeet
 ```
 
 The tool will create an `output` directory with a subdirectory for each transcription job, named with the date and the title of the file/video.
@@ -98,9 +114,7 @@ Each model can be individually configured with specific parameters:
 ```yaml
 # config.yaml
 models:
-  - whisper
   - parakeet
-  - canary
 
 output_formats:
   - json
@@ -108,22 +122,14 @@ output_formats:
   - csv
 
 model_configs:
-  whisper:
-    model_size: "large-v3"
-    device: "cuda"
   parakeet:
     model_size: "nvidia/parakeet-tdt-0.6b-v3"
-    device: "cuda"
-  canary:
-    model_size: "nvidia/canary-1b"
     device: "cuda"
 ```
 
 ### Available Models
 
-- **whisper**: OpenAI's Whisper model with various size options (tiny, base, small, medium, large, large-v2, large-v3)
 - **parakeet**: NVIDIA's TDT based ASR model, optimized for streaming applications
-- **canary**: NVIDIA's multilingual ASR model supporting multiple languages
 
 ### Output Formats
 
