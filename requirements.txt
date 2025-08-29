@@ -3,10 +3,11 @@ ffmpeg-python
 PyYAML
 nemo_toolkit[asr]>=2.4.0
 tqdm
-numpy>=2.0,<2.2
+numpy>=1.22,<2.2
 
 # PyTorch with CUDA support
---index-url https://download.pytorch.org/whl/cu124
-torch>=2.0.0
-torchvision>=0.15.0
-torchaudio>=2.0.0
+# Use explicit CUDA build tags so pip doesn't pick CPU wheels from PyPI
+--extra-index-url https://download.pytorch.org/whl/cu124
+torch==2.4.0+cu124
+torchvision==0.19.0+cu124
+torchaudio==2.4.0+cu124
