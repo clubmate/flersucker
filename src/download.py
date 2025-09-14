@@ -56,9 +56,10 @@ def iter_playlist_entries(info_dict):
             'url': url,
         }
 
-def extract_audio(video_path, output_path, audio_config=None):
+def extract_audio(video_path, output_path=None, audio_config=None):
     """
     Extracts audio from a video file based on the provided config using ffmpeg-python.
+    If output_path is None, saves the audio in the same directory as the video.
     """
     if audio_config is None:
         audio_config = {}
@@ -68,6 +69,11 @@ def extract_audio(video_path, output_path, audio_config=None):
     ac = audio_config.get('ac', 1)
 
     audio_filename = os.path.splitext(os.path.basename(video_path))[0] + '.wav'
+    
+    # Use the directory of the video file if no output_path is specified
+    if output_path is None:
+        output_path = os.path.dirname(video_path)
+    
     audio_path = os.path.join(output_path, audio_filename)
 
     try:

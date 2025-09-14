@@ -75,11 +75,13 @@ def main():
         # Audio path
         if video_path:
             audio_name = os.path.splitext(os.path.basename(video_path))[0] + '.wav'
-            audio_path = os.path.join(out_dir, audio_name)
+            # Use the same directory as the video file for consistency
+            video_dir = os.path.dirname(video_path)
+            audio_path = os.path.join(video_dir, audio_name)
             if os.path.exists(audio_path):
                 print("Audio exists, skip extraction")
             else:
-                audio_path = extract_audio(video_path, out_dir, audio_config=audio_config)
+                audio_path = extract_audio(video_path, video_dir, audio_config=audio_config)
         else:
             import shutil
             shutil.copy(single_input, out_dir)
@@ -91,12 +93,14 @@ def main():
         for m in models:
             try:
                 base_name = os.path.splitext(os.path.basename(audio_path))[0]
-                t_file = os.path.join(out_dir, f'{base_name}-{m}.json')
+                # Use the same directory as the audio file for consistency
+                audio_dir = os.path.dirname(audio_path)
+                t_file = os.path.join(audio_dir, f'{base_name}-{m}.json')
                 if os.path.exists(t_file):
                     print(f"Transcription exists ({m})")
                     transcripts.append(t_file)
                     continue
-                t_file = transcribe(m, audio_path, out_dir, model_cfgs.get(m, {}))
+                t_file = transcribe(m, audio_path, audio_dir, model_cfgs.get(m, {}))
                 # prepend metadata
                 try:
                     from collections import OrderedDict

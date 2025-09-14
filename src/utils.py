@@ -45,7 +45,7 @@ def sanitize_filename(name):
     """
     Sanitizes a string to be used as a valid filename.
     """
-    return re.sub(r'[\\/*?:"<>|]',"", name)
+    return re.sub(r'[\\/*?:"<>|#]',"", name)
 
 def create_output_directory(input_path):
     """
