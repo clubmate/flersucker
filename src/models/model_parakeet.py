@@ -41,15 +41,41 @@ def transcribe_parakeet(input_file, output_file, config):
             model = nemo_asr.models.EncDecRNNTBPEModel.from_pretrained(model_name)
             model = model.to(device)
             model.eval()
+            
+            # Apply memory optimizations for long audio files
+            # Based on https://huggingface.co/nvidia/parakeet-tdt-0.6b-v2/discussions/15
+            
+            # Get memory optimization settings from config
+            enable_local_attention = config.get("enable_local_attention", True)
+            local_attention_window = config.get("local_attention_window", [128, 128])
+            enable_chunking = config.get("enable_chunking", True)
+            
+            if enable_local_attention:
+                # Enable local attention to reduce memory usage
+                # This limits the attention window to reduce VRAM usage
+                print(f"Enabling local attention with window {local_attention_window}")
+                model.change_attention_model("rel_pos_local_attn", local_attention_window)
+            
+            if enable_chunking:
+                # Enable chunking for subsampling module to further reduce memory usage
+                print("Enabling chunked subsampling")
+                model.change_subsampling_conv_chunking_factor(1)  # 1 = auto select
         
         print("Model loaded. Transcribing...")
 
         # Perform transcription with timestamps
         with torch.no_grad():
+            # Clear GPU cache before transcription
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+            
             # NeMo expects audio files and returns transcription with timestamps
             # This includes both segment and word-level timestamps
+            # Use smaller batch size to reduce memory usage
+            batch_size = config.get("batch_size", 1)
+            
             with redirect_stdout(open(os.devnull, 'w')):  # Only suppress stdout, keep stderr for tqdm
-                transcriptions = model.transcribe([input_file], timestamps=True, batch_size=1)
+                transcriptions = model.transcribe([input_file], timestamps=True, batch_size=batch_size)
 
         # Process the result
         if isinstance(transcriptions, list) and len(transcriptions) > 0:
