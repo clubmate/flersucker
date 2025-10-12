@@ -21,7 +21,7 @@ youtube_download:
   additional_versions:
     - quality: "480p"  # Download or convert to 480p
       format: "best[height<=480][ext=mp4]/best[ext=mp4]/best"  # yt-dlp format selector
-      convert_from_best: true  # If true, convert from best quality instead of downloading separately
+      convert_from_best: false  # If true, convert from best quality instead of downloading separately
   audio_extraction:
     acodec: "pcm_s16le"
     ar: 16000 # sampling rate

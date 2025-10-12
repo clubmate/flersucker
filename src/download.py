@@ -152,6 +152,7 @@ def extract_audio(video_path, output_path=None, audio_config=None):
     audio_path = os.path.join(output_path, audio_filename)
 
     try:
+        print(f"Extracting audio from: {video_path}")
         (
             ffmpeg
             .input(video_path)
@@ -168,7 +169,7 @@ def extract_audio(video_path, output_path=None, audio_config=None):
 def convert_video_to_quality(input_video_path, target_quality):
     """
     Convert a video to a specific quality using ffmpeg.
-    Currently supports 480p conversion.
+    Supports 480p conversion with optimized settings.
     """
     if target_quality.lower() == '480p':
         # Set output resolution to 854x480 (480p)
@@ -188,14 +189,29 @@ def convert_video_to_quality(input_video_path, target_quality):
 
     try:
         print(f"Converting {input_video_path} to {target_quality}...")
+
+        # Optimized FFmpeg command for 480p conversion
         (
             ffmpeg
             .input(input_video_path)
             .output(output_path,
+                   # Video filters: scale with aspect ratio preservation and padding
                    vf=f'scale={width}:{height}:force_original_aspect_ratio=decrease,pad={width}:{height}:(ow-iw)/2:(oh-ih)/2',
-                   preset='fast',
-                   crf=23)  # Good quality/size balance
-            .run(capture_stdout=True, capture_stderr=True, overwrite_output=True)
+                   # Video codec settings
+                   vcodec='libx264',  # H.264 codec
+                   preset='medium',   # Good balance between speed and quality
+                   crf=23,           # Constant quality (lower = better quality, higher = smaller file)
+                   # Audio settings
+                   acodec='aac',     # AAC audio codec
+                   ab='128k',        # Audio bitrate
+                   ar=44100,         # Audio sample rate
+                   ac=2,             # Stereo audio
+                   # Additional optimizations
+                   movflags='+faststart',  # Enable fast start for web playback
+                   pix_fmt='yuv420p'       # Pixel format for compatibility
+                   )
+            .global_args('-progress', 'pipe:1')  # Output progress to stdout
+            .run(capture_stdout=False, capture_stderr=False, overwrite_output=True)
         )
         print(f"Conversion complete: {output_path}")
         return output_path
