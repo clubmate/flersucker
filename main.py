@@ -4,7 +4,7 @@ import yaml
 import sys
 import importlib.util
 import json
-from src.download import download_youtube, extract_audio, probe_youtube, is_playlist, iter_playlist_entries
+from src.download import download_youtube_with_versions, extract_audio, probe_youtube, is_playlist, iter_playlist_entries
 from src.transcribe import transcribe
 from src.utils import create_output_directory
 
@@ -55,6 +55,7 @@ def main():
 
     yt_cfg = config.get("youtube_download", {})
     video_quality = yt_cfg.get("video_quality", "best[ext=mp4]/best")
+    additional_versions = yt_cfg.get("additional_versions", [])
     audio_config = yt_cfg.get("audio_extraction", {})
 
     def process_one(single_input, meta_override=None):
@@ -63,7 +64,9 @@ def main():
         video_path = None
         if "youtube.com" in single_input or "youtu.be" in single_input:
             print(f"Download: {single_input}")
-            video_path, dl_meta = download_youtube(single_input, out_dir, quality=video_quality)
+            video_path, additional_video_paths, dl_meta = download_youtube_with_versions(
+                single_input, out_dir, quality=video_quality, additional_versions=additional_versions
+            )
             # Merge: overwrite empty/None values from flat playlist probe with real values
             for k, v in dl_meta.items():
                 if k not in meta or not meta.get(k):  # also replaces '' or None

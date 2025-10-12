@@ -17,6 +17,11 @@ model_configs:
 
 youtube_download:
   video_quality: "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best"
+  # Additional video versions to download/convert
+  additional_versions:
+    - quality: "480p"  # Download or convert to 480p
+      format: "best[height<=480][ext=mp4]/best[ext=mp4]/best"  # yt-dlp format selector
+      convert_from_best: true  # If true, convert from best quality instead of downloading separately
   audio_extraction:
     acodec: "pcm_s16le"
     ar: 16000 # sampling rate

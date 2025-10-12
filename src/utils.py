@@ -44,8 +44,31 @@ def get_date_for_directory(input_path):
 def sanitize_filename(name):
     """
     Sanitizes a string to be used as a valid filename.
+    Removes all special characters, keeps only a-z letters, replaces spaces with hyphens.
     """
-    return re.sub(r'[\\/*?:"<>|#]',"", name)
+    if not name:
+        return "unnamed"
+
+    # Convert to lowercase
+    name = name.lower()
+
+    # Remove all characters that are not letters or spaces
+    name = re.sub(r'[^a-z\s]', '', name)
+
+    # Replace spaces with hyphens
+    name = re.sub(r'\s+', '-', name)
+
+    # Remove multiple consecutive hyphens
+    name = re.sub(r'-+', '-', name)
+
+    # Remove leading and trailing hyphens
+    name = name.strip('-')
+
+    # Ensure we have at least some content
+    if not name:
+        return "unnamed"
+
+    return name
 
 def create_output_directory(input_path):
     """
