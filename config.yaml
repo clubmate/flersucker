@@ -9,7 +9,7 @@ model_configs:
   parakeet:
     active: true
     model_size: "nvidia/parakeet-tdt-0.6b-v3"
-    device: "cuda"
+    device: "cpu" # cpu/cuda
     # Memory optimization settings for long audio files
     enable_local_attention: true
     local_attention_window: [128, 128]  # [left_context, right_context] in frames
