@@ -37,6 +37,7 @@ def main():
     parser.add_argument("--models", nargs="+", default=[], help="Models to use")
     parser.add_argument("--config", default="config.yaml", help="Config file path")
     parser.add_argument("--playlist-start", type=int, default=1, help="Start index (1-based) when processing a YouTube playlist")
+    parser.add_argument("--ultra", action="store_true", help="Use ultra quality mode (GPU, maximum quality, disables optimizations)")
     args = parser.parse_args()
 
     # Config
@@ -48,10 +49,23 @@ def main():
 
     models = args.models or config.get("models", [])
     if not models:
-        print("Available models: parakeet")
+        available_models = [m for m in config.get("models", []) if config.get("model_configs", {}).get(m, {}).get("active", True)]
+        print(f"Available models: {', '.join(available_models)}")
         models = input("Which model(s)? ").split()
     model_cfgs = config.get("model_configs", {})
     models = [m for m in models if model_cfgs.get(m, {}).get("active", True)]
+
+    # Apply ultra quality configurations if --ultra flag is set
+    if args.ultra:
+        print("🚀 ULTRA MODE activated! Using GPU with maximum quality settings...")
+        ultra_cfgs = config.get("ultra_configs", {})
+        for model_name in models:
+            if model_name in ultra_cfgs:
+                print(f"Applying ultra settings for {model_name}")
+                # Merge ultra config with base config (ultra overrides)
+                base_config = model_cfgs.get(model_name, {})
+                ultra_config = ultra_cfgs.get(model_name, {})
+                model_cfgs[model_name] = {**base_config, **ultra_config}
 
     yt_cfg = config.get("youtube_download", {})
     video_quality = yt_cfg.get("video_quality", "best[ext=mp4]/best")
