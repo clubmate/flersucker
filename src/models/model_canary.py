@@ -45,6 +45,14 @@ def transcribe_canary(input_file, output_file, config):
             model = ASRModel.from_pretrained(model_name)
             model = model.to(device)
             model.eval()
+            
+            # Check for multi-GPU support
+            use_multigpu = config.get("use_multigpu", False)
+            if use_multigpu and torch.cuda.device_count() > 1 and device.startswith("cuda"):
+                print(f"🚀 Enabling DataParallel on {torch.cuda.device_count()} GPUs")
+                model = torch.nn.DataParallel(model)
+            else:
+                print(f"Using single GPU/CPU: {device}")
 
         print("Model loaded. Transcribing...")
 

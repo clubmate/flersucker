@@ -15,6 +15,7 @@ model_configs:
     enable_local_attention: true
     local_attention_window: [512, 512]  # [left_context, right_context] in frames (stanni 128 / 128)
     enable_chunking: true
+    use_multigpu: false  # Enable DataParallel for multiple GPUs
 
   canary:
     active: true
@@ -23,6 +24,7 @@ model_configs:
     source_lang: "de"  # German source language
     target_lang: "de"  # German target language (ASR mode)
     timestamps: true   # Enable timestamps (includes word-level)
+    use_multigpu: false  # Enable DataParallel for multiple GPUs
 
 # Ultra quality configurations (GPU, maximum quality)
 ultra_configs:
@@ -31,11 +33,13 @@ ultra_configs:
     enable_local_attention: false  # Disable for maximum quality
     enable_chunking: false         # Disable for maximum quality
     batch_size: 4                  # Larger batch size for GPU
+    use_multigpu: true             # Enable multi-GPU in ultra mode
 
   canary:
     device: "cuda"
     batch_size: 4                  # Larger batch size for GPU
     timestamps: true               # Ensure timestamps are enabled in ultra mode
+    use_multigpu: true             # Enable multi-GPU in ultra mode
 
 youtube_download:
   video_quality: "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best"
