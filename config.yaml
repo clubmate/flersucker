@@ -30,11 +30,11 @@ ultra_configs:
     device: "cuda"
     enable_local_attention: false  # Disable for maximum quality
     enable_chunking: false         # Disable for maximum quality
-    batch_size: 4                  # Larger batch size for GPU
+    batch_size: 1                  # Larger batch size for GPU
 
   canary:
     device: "cuda"
-    batch_size: 4                  # Larger batch size for GPU
+    batch_size: 1                  # Larger batch size for GPU
     timestamps: true               # Ensure timestamps are enabled in ultra mode
 
 youtube_download:
