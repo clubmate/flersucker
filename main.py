@@ -8,6 +8,9 @@ from src.download import download_youtube_with_versions, extract_audio, probe_yo
 from src.transcribe import transcribe
 from src.utils import create_output_directory
 
+os.environ['HF_HOME'] = 'C:\\hf_cache'
+os.makedirs('C:\\hf_cache', exist_ok=True)
+
 def apply_nemo_patch_on_windows():
     if sys.platform != "win32":
         return
