@@ -70,7 +70,7 @@ def sanitize_filename(name):
 
     return name
 
-def create_output_directory(input_path):
+def create_output_directory(input_path, base_output_path='output'):
     """
     Creates an output directory based on the input file name or URL.
     """
@@ -84,9 +84,9 @@ def create_output_directory(input_path):
     dir_name = f"{date_str}-{sanitized_title[:40]}"  # Date is already in YYYYMMDD format
     
     # Ensure the main output directory exists
-    if not os.path.exists('output'):
-        os.makedirs('output')
+    if not os.path.exists(base_output_path):
+        os.makedirs(base_output_path)
 
-    output_dir = os.path.join('output', dir_name)
+    output_dir = os.path.join(base_output_path, dir_name)
     os.makedirs(output_dir, exist_ok=True)
     return output_dir

@@ -1,10 +1,11 @@
 # Configuration for the transcription tool
 models:
   - parakeet
-  - canary
 
 output_formats:
   - json
+
+output_path: "E:/_FLER-INTERVIEWS"  # Base directory for all outputs
 
 model_configs:
   parakeet:
@@ -17,15 +18,6 @@ model_configs:
     enable_chunking: true
     use_multigpu: false  # Enable DataParallel for multiple GPUs
 
-  canary:
-    active: true
-    model_name: "nvidia/canary-1b-v2"
-    device: "cpu" # cpu/cuda
-    source_lang: "de"  # German source language
-    target_lang: "de"  # German target language (ASR mode)
-    timestamps: true   # Enable timestamps (includes word-level)
-    use_multigpu: false  # Enable DataParallel for multiple GPUs
-
 # Ultra quality configurations (GPU, maximum quality)
 ultra_configs:
   parakeet:
@@ -33,12 +25,6 @@ ultra_configs:
     enable_local_attention: false  # Disable for maximum quality
     enable_chunking: false         # Disable for maximum quality
     batch_size: 4                  # Larger batch size for GPU (was 4)
-    use_multigpu: true             # Enable multi-GPU in ultra mode
-
-  canary:
-    device: "cuda"  # cpu/cuda
-    batch_size: 4                  # Larger batch size for GPU (was 4)
-    timestamps: true               # Ensure timestamps are enabled in ultra mode
     use_multigpu: true             # Enable multi-GPU in ultra mode
 
 youtube_download:

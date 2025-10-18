@@ -8,9 +8,6 @@ from src.download import download_youtube_with_versions, extract_audio, probe_yo
 from src.transcribe import transcribe
 from src.utils import create_output_directory
 
-os.environ['HF_HOME'] = 'C:\\hf_cache'
-os.makedirs('C:\\hf_cache', exist_ok=True)
-
 def apply_nemo_patch_on_windows():
     if sys.platform != "win32":
         return
@@ -74,9 +71,10 @@ def main():
     video_quality = yt_cfg.get("video_quality", "best[ext=mp4]/best")
     additional_versions = yt_cfg.get("additional_versions", [])
     audio_config = yt_cfg.get("audio_extraction", {})
+    output_path = config.get("output_path", "output")
 
     def process_one(single_input, meta_override=None):
-        out_dir = create_output_directory(single_input)
+        out_dir = create_output_directory(single_input, output_path)
         meta = meta_override or {}
         video_path = None
         if "youtube.com" in single_input or "youtu.be" in single_input:
