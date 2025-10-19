@@ -14,7 +14,7 @@ model_configs:
     device: "cpu" # cpu/cuda
     # Memory optimization settings for long audio files
     enable_local_attention: true
-    local_attention_window: [256, 256]  # [left_context, right_context] in frames (stanni 128 / 128)
+    local_attention_window: [128, 128]  # [left_context, right_context] in frames (stanni 128 / 128)
     enable_chunking: true
     use_multigpu: false  # Enable DataParallel for multiple GPUs
 
