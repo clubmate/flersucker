@@ -5,6 +5,11 @@ nemo_toolkit[asr]>=2.4.0
 tqdm
 numpy>=1.22,<2.2
 
+# WhisperX dependencies
+whisperx
+faster-whisper
+pyannote.audio  # Optional: for speaker diarization
+
 # PyTorch with CUDA support
 # Use explicit CUDA build tags so pip doesn't pick CPU wheels from PyPI
 --extra-index-url https://download.pytorch.org/whl/cu124

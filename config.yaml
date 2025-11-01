@@ -1,6 +1,7 @@
 # Configuration for the transcription tool
 models:
   - parakeet
+  - whisperx
 
 output_formats:
   - json
@@ -17,6 +18,19 @@ model_configs:
     local_attention_window: [128, 128]  # [left_context, right_context] in frames (stanni 128 / 128)
     enable_chunking: true
     use_multigpu: false  # Enable DataParallel for multiple GPUs
+  
+  whisperx:
+    active: true
+    model_size: "large-v3"  # tiny, base, small, medium, large-v2, large-v3
+    device: "cpu"  # cpu/cuda
+    compute_type: "int8"  # float16 for GPU, int8 for CPU
+    batch_size: 16  # Batch size for transcription
+    language: "de"  # Language code (de=German, en=English, etc.)
+    enable_alignment: true  # Enable word-level timestamps via forced alignment
+    enable_diarization: false  # Enable speaker diarization (requires hf_token)
+    hf_token: null  # Hugging Face token for diarization (pyannote.audio)
+    min_speakers: null  # Minimum number of speakers (for diarization)
+    max_speakers: null  # Maximum number of speakers (for diarization)
 
 # Ultra quality configurations (GPU, maximum quality)
 ultra_configs:
@@ -26,6 +40,13 @@ ultra_configs:
     enable_chunking: false         # Disable for maximum quality
     batch_size: 4                  # Larger batch size for GPU (was 4)
     use_multigpu: true             # Enable multi-GPU in ultra mode
+  
+  whisperx:
+    device: "cuda"  # cpu/cuda
+    compute_type: "float16"  # float16 for maximum quality on GPU
+    batch_size: 16  # Larger batch for GPU
+    enable_alignment: true  # Keep word-level timestamps
+    enable_diarization: false  # Optional: enable if you need speaker identification
 
 youtube_download:
   video_quality: "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best"
