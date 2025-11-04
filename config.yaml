@@ -2,6 +2,7 @@
 models:
   - parakeet
   - whisperx
+  - stablew
 
 output_formats:
   - json
@@ -31,6 +32,26 @@ model_configs:
     hf_token: null  # Hugging Face token for diarization (pyannote.audio)
     min_speakers: null  # Minimum number of speakers (for diarization)
     max_speakers: null  # Maximum number of speakers (for diarization)
+  
+  stablew:
+    active: true
+    model_size: "large-v3"  # tiny, base, small, medium, large-v2, large-v3
+    device: "cpu"  # cpu/cuda
+    # Note: stable-ts doesn't use compute_type, it auto-selects based on device
+    language: "de"  # Language code (de=German, en=English, etc.)
+    # Voice Activity Detection
+    vad: true  # Enable VAD for better speech detection
+    vad_threshold: 0.35  # VAD threshold (0.0-1.0, lower = more sensitive)
+    vad_onnx: false  # Use ONNX for faster VAD (requires onnxruntime)
+    # Timestamp stabilization (eliminates overlaps)
+    suppress_silence: true  # Suppress timestamps in silent parts
+    suppress_word_ts: true  # Suppress unreliable word timestamps
+    min_word_dur: 0.1  # Minimum word duration in seconds
+    max_word_dur: 3.0  # Maximum word duration in seconds
+    nonspeech_error: 0.1  # Error tolerance for non-speech detection
+    # Post-processing
+    refine: false  # Refine timestamps after transcription for maximum accuracy
+    only_voice_freq: false  # Filter out non-voice frequencies (slower but more accurate)
 
 # Ultra quality configurations (GPU, maximum quality)
 ultra_configs:
@@ -47,6 +68,12 @@ ultra_configs:
     batch_size: 16  # Larger batch for GPU
     enable_alignment: true  # Keep word-level timestamps
     enable_diarization: false  # Optional: enable if you need speaker identification
+  
+  stablew:
+    device: "cuda"  # cpu/cuda
+    # Note: stable-ts doesn't use compute_type
+    vad_onnx: true  # Use ONNX for faster VAD on GPU
+    refine: true  # Always refine in ultra mode for best accuracy
 
 youtube_download:
   video_quality: "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best"
