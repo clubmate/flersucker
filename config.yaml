@@ -50,8 +50,12 @@ model_configs:
     max_word_dur: 3.0  # Maximum word duration in seconds
     nonspeech_error: 0.1  # Error tolerance for non-speech detection
     # Post-processing
-    refine: false  # Refine timestamps after transcription for maximum accuracy
+    refine: false  # Refine timestamps after transcription (VERY slow, 4+ hours for long audio)
     only_voice_freq: false  # Filter out non-voice frequencies (slower but more accurate)
+    # Segment merging (combine segments into complete sentences)
+    regroup: true  # Regroup segments by punctuation (., !, ?) - RECOMMENDED
+    merge_by_sentence: false  # Alternative merging method (only if regroup is false)
+    max_sentence_len: null  # Maximum sentence length in characters (null = no limit)
 
 # Ultra quality configurations (GPU, maximum quality)
 ultra_configs:

@@ -46,6 +46,11 @@ def transcribe_stablew(input_file, output_file, config):
     # Refinement options
     refine = config.get("refine", True)  # Post-process for better timestamps
     only_voice_freq = config.get("only_voice_freq", False)  # Filter non-voice frequencies
+    
+    # Segment merging options (combine short segments into sentences)
+    merge_by_sentence = config.get("merge_by_sentence", True)  # Merge segments at sentence boundaries
+    max_sentence_len = config.get("max_sentence_len", None)  # Maximum sentence length in characters
+    regroup = config.get("regroup", True)  # Regroup segments for better sentence structure
 
     print(f"Loading Stable-Whisper model: {model_size}")
     print(f"Device: {device}")
@@ -60,7 +65,7 @@ def transcribe_stablew(input_file, output_file, config):
         print("Model loaded. Transcribing...")
         
         # 2. Transcribe with stable timestamps
-        # Note: Some parameters are only for refine(), not transcribe()
+        # regroup=False because we want custom regrouping for exactly one sentence per segment
         result = model.transcribe(
             input_file,
             language=language,
@@ -69,27 +74,37 @@ def transcribe_stablew(input_file, output_file, config):
             vad_onnx=vad_onnx,
             suppress_silence=suppress_silence,
             suppress_word_ts=suppress_word_ts,
-            word_timestamps=True  # Always get word timestamps
+            word_timestamps=True,  # Always get word timestamps
+            regroup=False  # Disable default regrouping, we'll do custom regrouping
         )
         
-        print(f"Initial transcription complete.")
+        print(f"Initial transcription complete. Initial segments: {len(result.segments)}")
         
-        # 3. Refine timestamps for maximum accuracy
+        # 3. Refine timestamps for maximum accuracy (optional, slow)
         if refine:
             print("Refining timestamps for improved accuracy...")
-            # refine() uses different parameters - it's primarily for audio realignment
-            # The main stabilization already happened in transcribe()
             try:
-                result = model.refine(
-                    input_file,
-                    result
-                    # Note: refine() doesn't accept these parameters directly
-                    # Stabilization is already done by transcribe() with vad and suppress_* options
-                )
+                result = model.refine(input_file, result)
                 print("Timestamp refinement complete.")
             except Exception as e:
                 print(f"Refinement skipped: {e}")
                 print("Using transcription results without additional refinement.")
+        
+        # 4. Split segments into individual sentences (exactly one sentence per segment)
+        if regroup:
+            print("Splitting segments at sentence boundaries...")
+            # Split at sentence-ending punctuation: . ! ?
+            # The format is (punctuation, suffix_to_add_after_split)
+            # ' ' means keep a space after the punctuation when splitting
+            result = result.split_by_punctuation([('.', ' '), ('!', ' '), ('?', ' ')])
+            print(f"Split complete. Final segments: {len(result.segments)}")
+            print(f"Split to {len(result.segments)} sentence-based segments.")
+        
+        # 3b. Alternative: Split by punctuation for better sentence structure
+        if merge_by_sentence and not regroup:
+            print("Merging segments by sentence...")
+            result = result.split_by_punctuation([('.', ' '), ('。', ' '), ('?', ' '), ('!', ' ')])
+            print(f"Merged to {len(result.segments)} segments.")
         
         # 4. Convert result to our JSON format (match Parakeet format)
         segments = []
