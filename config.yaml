@@ -36,7 +36,7 @@ model_configs:
   stablew:
     active: true
     model_size: "large-v3"  # tiny, base, small, medium, large-v2, large-v3
-    device: "cpu"  # cpu/cuda
+    device: "cuda"  # cpu/cuda
     # Note: stable-ts doesn't use compute_type, it auto-selects based on device
     language: "de"  # Language code (de=German, en=English, etc.)
     # Voice Activity Detection
